@@ -1,55 +1,48 @@
-# 워크플로우의 이름. GitHub Actions 탭에 이 이름이 표시됩니다.
+# Name of the workflow. This will be displayed in the GitHub Actions tab.
 name: Qt CI Build
 
-# 이 워크플로우가 언제 실행될지를 지정합니다.
+# Specifies when this workflow will run.
 on:
-  # 'main' 브랜치에 push 이벤트가 발생했을 때
   push:
     branches: [ "main" ]
-  # 'main' 브랜치로 향하는 pull request가 생성되거나 업데이트될 때
   pull_request:
     branches: [ "main" ]
 
-# 실행할 작업(job)들을 정의합니다.
 jobs:
-  # 'build'라는 이름의 작업을 정의합니다.
-  build:
-    # 이 작업이 실행될 가상 환경을 지정합니다.
-    # matrix 전략을 사용해 여러 운영체제에서 동시에 실행합니다.
-    strategy:
-      matrix:
-        os: [windows-latest]
-        qt_version: ['6.7.1']
+  # A job to build and test the project.
+  build-and-test:
+    # Specifies the runner environment. Focusing on the Windows build only.
+    runs-on: windows-latest
 
-    # matrix에 정의된 각 OS에서 작업을 실행합니다.
-    runs-on: ${{ matrix.os }}
-
-    # 실제 실행될 단계(step)들을 정의합니다.
     steps:
-      # 1. GitHub 저장소의 코드를 가상 환경으로 가져옵니다(checkout).
+      # Step 1: Check out the source code from the repository.
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Qt를 설치합니다. 'jurplel/install-qt-action'은 매우 인기 있는 액션입니다.
+      # Step 2: Install the Qt environment.
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
-          # matrix에서 정의한 Qt 버전을 사용합니다.
-          version: ${{ matrix.qt_version }}
-          # Windows에서는 MSVC 2019 64비트 버전을 사용하도록 아키텍처를 지정합니다.
-          # 다른 OS에서는 이 값이 무시됩니다.
+          version: '6.7.1'
           arch: win64_mingw
-          # 추가 모듈이 필요하면 여기에 명시합니다. (예: 'qtcharts qtwebsockets')
-          # modules: ''
 
-      # 3. CMake를 사용하여 프로젝트를 구성합니다. (Generator 지정 포함)
+      # Step 3: Configure the project with CMake.
       - name: Configure Project with CMake
         run: cmake -B ./build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
 
-      # 4. 프로젝트를 빌드합니다.
+      # Step 4: Build the project.
       - name: Build Project
         run: cmake --build ./build --config Release
 
-      # (선택 사항) 5. 테스트가 있다면 실행합니다. (CTest 필요)
-      # - name: Run Tests
-      #   run: ctest --test-dir ./build --build-config Release
+      # Step 5: Run tests. (Requires project setup as described below).
+      #- name: Run Tests
+        # Run CTest. --output-on-failure is useful for debugging as it shows logs on test failure.
+      #  run: ctest --test-dir ./build --output-on-failure
+
+      # Step 6: Upload the build artifact (the executable file).
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: adamscard-windows
+          # Specify the path to the executable. Adjust if your output directory is different.
+          path: ./build/ADAMSCARD.exe
