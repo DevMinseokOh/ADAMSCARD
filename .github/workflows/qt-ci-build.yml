@@ -19,7 +19,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        qt_version: ['6.9.1'] # 여기서 원하는 Qt 버전을 지정하세요.
+        qt_version: ['6.7.1']
 
     # matrix에 정의된 각 OS에서 작업을 실행합니다.
     runs-on: ${{ matrix.os }}
