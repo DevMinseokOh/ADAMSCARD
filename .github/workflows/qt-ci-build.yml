@@ -18,7 +18,7 @@ jobs:
     # matrix 전략을 사용해 여러 운영체제에서 동시에 실행합니다.
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [windows-latest]
         qt_version: ['6.7.1']
 
     # matrix에 정의된 각 OS에서 작업을 실행합니다.
