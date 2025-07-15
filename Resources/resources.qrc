@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/Resources">
+        <file>Close.png</file>
+        <file>Maximize.png</file>
+        <file>Minimize.png</file>
+        <file>Restore.png</file>
+        <file>TitleBar.qml</file>
+    </qresource>
+</RCC>
