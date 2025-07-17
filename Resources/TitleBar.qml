@@ -13,7 +13,7 @@ Rectangle {
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.bottom: parent.bottom
-        anchors.margins: 10 // 모든 방향으로 10px의 여백을 줍니다.
+        anchors.margins: 10
         spacing: 10
 
         Text {

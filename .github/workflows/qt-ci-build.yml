@@ -1,7 +1,7 @@
-# Name of the workflow. This will be displayed in the GitHub Actions tab.
+# 워크플로우 이름
 name: Qt CI Build
 
-# Specifies when this workflow will run.
+# 워크플로우 실행 조건
 on:
   push:
     branches: [ "main" ]
@@ -9,40 +9,59 @@ on:
     branches: [ "main" ]
 
 jobs:
-  # A job to build and test the project.
-  build-and-test:
-    # Specifies the runner environment. Focusing on the Windows build only.
+  build-windows:
+    # 실행 환경 지정
     runs-on: windows-latest
 
     steps:
-      # Step 1: Check out the source code from the repository.
+      # 1. 소스 코드 체크아웃
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Install the Qt environment.
+      # 2. MSYS2 설정 (vcpkg나 choco보다 MinGW 환경에 친화적)
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          # pacman을 통해 yaml-cpp 설치
+          install: >-
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-yaml-cpp
+
+      # 3. Qt 환경 설치 (캐싱 활성화)
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
           version: '6.7.1'
           arch: win64_mingw
+          # 캐싱을 활성화하여 빌드 시간 단축
+          cached: ${{ !env.ACT }}
 
-      # Step 3: Configure the project with CMake.
+      # 4. 프로젝트 구성 (CMake)
+      #    - CMAKE_PREFIX_PATH에 msys2 경로를 추가하여 yaml-cpp를 찾도록 함
+      #    - 셸을 msys2의 bash로 지정하여 환경을 통일
       - name: Configure Project with CMake
-        run: cmake -B ./build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+        shell: msys2 {0}
+        run: |
+          cmake -B ./build -G "MinGW Makefiles" \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_PREFIX_PATH="$MINGW_PREFIX"
 
-      # Step 4: Build the project.
+      # 5. 프로젝트 빌드
       - name: Build Project
+        shell: msys2 {0}
         run: cmake --build ./build --config Release
 
-      # Step 5: Run tests. (Requires project setup as described below).
-      #- name: Run Tests
-        # Run CTest. --output-on-failure is useful for debugging as it shows logs on test failure.
-      #  run: ctest --test-dir ./build --output-on-failure
+      # 6. (선택사항) 테스트 실행
+      # - name: Run Tests
+      #   shell: msys2 {0}
+      #   run: ctest --test-dir ./build --output-on-failure
 
-      # Step 6: Upload the build artifact (the executable file).
+      # 7. 빌드 결과물 업로드
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: adamscard-windows
-          # Specify the path to the executable. Adjust if your output directory is different.
           path: ./build/ADAMSCARD.exe
